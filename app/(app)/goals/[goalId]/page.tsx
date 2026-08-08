@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getOwnedGoal } from "@/lib/domain/goals";
-import { getLevelProgress } from "@/lib/domain/xp";
+import { listActiveTasks } from "@/lib/domain/tasks";
 import { archiveGoalAction } from "./actions";
+import { TaskBoard } from "./task-board";
 
 export default async function GoalDetailPage({
   params,
@@ -17,11 +18,7 @@ export default async function GoalDetailPage({
   const goal = await getOwnedGoal(session.user.id, goalId);
   if (!goal) notFound();
 
-  const progress = getLevelProgress(goal.totalXp);
-  const percent = Math.min(
-    100,
-    Math.round((progress.xpIntoLevel / progress.xpForNextLevel) * 100)
-  );
+  const tasks = await listActiveTasks(session.user.id, goalId);
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,27 +52,7 @@ export default async function GoalDetailPage({
         </div>
       </div>
 
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-medium text-neutral-200">
-            Level {progress.level}
-          </span>
-          <span className="text-neutral-500">
-            {progress.xpIntoLevel} / {progress.xpForNextLevel} XP
-          </span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-          <div
-            className="h-full rounded-full bg-indigo-500 transition-all"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-dashed border-neutral-800 p-6 text-center text-sm text-neutral-500">
-        Tasks (habits, dailies, to-dos) will show up here once Tasks CRUD
-        (M3) lands.
-      </div>
+      <TaskBoard goalId={goal.id} totalXp={goal.totalXp} tasks={tasks} />
     </div>
   );
 }
