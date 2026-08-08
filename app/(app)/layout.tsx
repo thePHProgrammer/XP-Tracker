@@ -18,9 +18,17 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
       <header className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
-        <Link href="/dashboard" className="font-bold">
-          XP Tracker
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="font-bold">
+            XP Tracker
+          </Link>
+          <Link
+            href="/shop"
+            className="text-sm text-neutral-400 transition hover:text-neutral-200"
+          >
+            Shop
+          </Link>
+        </div>
         <div className="flex items-center gap-4 text-sm text-neutral-400">
           <span>{session.user.email}</span>
           <form
