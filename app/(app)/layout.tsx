@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
+import { recomputeDailyRollover } from "@/lib/domain/recompute";
 
 export default async function AppLayout({
   children,
@@ -11,6 +12,8 @@ export default async function AppLayout({
   if (!session?.user) {
     redirect("/login");
   }
+
+  await recomputeDailyRollover(session.user.id);
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">

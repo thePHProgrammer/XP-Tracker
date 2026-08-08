@@ -53,10 +53,22 @@ export default async function DashboardPage() {
           <p className="text-2xl font-semibold">{character.gold}</p>
         </div>
         <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-          <p className="text-xs uppercase text-neutral-500">HP</p>
-          <p className="text-2xl font-semibold">
-            {character.hp} / {character.maxHp}
-          </p>
+          <div className="mb-1 flex items-baseline justify-between">
+            <p className="text-xs uppercase text-neutral-500">HP</p>
+            <p className="text-sm text-neutral-400">
+              {character.hp} / {character.maxHp}
+            </p>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+            <div
+              className="h-full rounded-full bg-red-500 transition-all"
+              style={{
+                width: `${Math.round(
+                  (character.hp / character.maxHp) * 100
+                )}%`,
+              }}
+            />
+          </div>
         </div>
       </div>
 

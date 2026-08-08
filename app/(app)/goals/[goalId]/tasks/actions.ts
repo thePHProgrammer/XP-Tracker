@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import {
   archiveTask,
+  completeDaily,
   completeTodo,
   createTask,
   incrementHabit,
@@ -27,6 +28,7 @@ export async function createTaskAction(
     notes: formData.get("notes"),
     difficulty: formData.get("difficulty"),
     habitAllowNegative: formData.get("habitAllowNegative"),
+    repeatDays: formData.getAll("repeatDays"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -43,6 +45,17 @@ export async function completeTodoAction(goalId: string, taskId: string) {
   if (!session?.user) redirect("/login");
 
   const task = await completeTodo(session.user.id, taskId);
+  if (!task) notFound();
+
+  revalidatePath(`/goals/${goalId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function completeDailyAction(goalId: string, taskId: string) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const task = await completeDaily(session.user.id, taskId);
   if (!task) notFound();
 
   revalidatePath(`/goals/${goalId}`);

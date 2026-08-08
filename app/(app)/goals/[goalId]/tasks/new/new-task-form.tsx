@@ -20,39 +20,50 @@ function SubmitButton() {
 const inputClass =
   "rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-neutral-100 outline-none focus:border-indigo-500";
 
+const WEEKDAYS = [
+  { value: 0, label: "Sun" },
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
+];
+
 export function NewTaskForm({ goalId }: { goalId: string }) {
   const boundAction = createTaskAction.bind(null, goalId);
   const [state, formAction] = useActionState<FormState, FormData>(
     boundAction,
     undefined
   );
-  const [type, setType] = useState<"HABIT" | "TODO">("TODO");
+  const [type, setType] = useState<"HABIT" | "TODO" | "DAILY">("TODO");
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
       <div className="flex flex-col gap-1">
         <span className="text-sm text-neutral-300">Type</span>
         <div className="flex gap-2">
-          <label className="flex flex-1 items-center justify-center gap-2 rounded-md border border-neutral-700 px-3 py-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-neutral-900">
-            <input
-              type="radio"
-              name="type"
-              value="TODO"
-              checked={type === "TODO"}
-              onChange={() => setType("TODO")}
-            />
-            To-do (one-off)
-          </label>
-          <label className="flex flex-1 items-center justify-center gap-2 rounded-md border border-neutral-700 px-3 py-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-neutral-900">
-            <input
-              type="radio"
-              name="type"
-              value="HABIT"
-              checked={type === "HABIT"}
-              onChange={() => setType("HABIT")}
-            />
-            Habit (repeatable)
-          </label>
+          {(
+            [
+              ["TODO", "To-do"],
+              ["HABIT", "Habit"],
+              ["DAILY", "Daily"],
+            ] as const
+          ).map(([value, label]) => (
+            <label
+              key={value}
+              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-neutral-700 px-3 py-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-neutral-900"
+            >
+              <input
+                type="radio"
+                name="type"
+                value={value}
+                checked={type === value}
+                onChange={() => setType(value)}
+              />
+              {label}
+            </label>
+          ))}
         </div>
       </div>
 
@@ -100,6 +111,30 @@ export function NewTaskForm({ goalId }: { goalId: string }) {
           <input type="checkbox" name="habitAllowNegative" />
           Also allow a negative click (costs HP)
         </label>
+      ) : null}
+
+      {type === "DAILY" ? (
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-neutral-300">
+            Repeats on (missing a scheduled day costs HP)
+          </span>
+          <div className="flex gap-1">
+            {WEEKDAYS.map((day) => (
+              <label
+                key={day.value}
+                className="flex flex-1 flex-col items-center gap-1 rounded-md border border-neutral-700 px-1 py-2 text-xs has-[:checked]:border-indigo-500 has-[:checked]:bg-neutral-900"
+              >
+                <input
+                  type="checkbox"
+                  name="repeatDays"
+                  value={day.value}
+                  defaultChecked
+                />
+                {day.label}
+              </label>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       {state?.error ? (

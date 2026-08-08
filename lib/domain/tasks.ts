@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { DIFFICULTY_CONFIG, type DifficultyKey } from "@/lib/domain/xp";
 import { getOwnedGoal } from "@/lib/domain/goals";
+import { weekdayInTimeZone } from "@/lib/domain/timezone";
 
 export async function listActiveTasks(userId: string, goalId: string) {
   return prisma.task.findMany({
@@ -20,11 +21,12 @@ export async function createTask(
   userId: string,
   goalId: string,
   data: {
-    type: "HABIT" | "TODO";
+    type: "HABIT" | "TODO" | "DAILY";
     title: string;
     notes?: string;
     difficulty: DifficultyKey;
     habitAllowNegative?: boolean;
+    repeatDays?: number[];
   }
 ) {
   const goal = await getOwnedGoal(userId, goalId);
@@ -44,6 +46,12 @@ export async function createTask(
       habitAllowPositive: true,
       habitAllowNegative:
         data.type === "HABIT" ? Boolean(data.habitAllowNegative) : false,
+      repeatDays:
+        data.type === "DAILY"
+          ? data.repeatDays?.length
+            ? data.repeatDays
+            : [0, 1, 2, 3, 4, 5, 6]
+          : [0, 1, 2, 3, 4, 5, 6],
     },
   });
 }
@@ -87,6 +95,54 @@ export async function completeTodo(userId: string, taskId: string) {
         xpDelta: task.xpValue,
         goldDelta: task.goldValue,
         message: `Completed "${task.title}"`,
+      },
+    });
+    return updated;
+  });
+}
+
+export async function completeDaily(userId: string, taskId: string) {
+  const task = await getOwnedTask(userId, taskId);
+  if (!task || task.type !== "DAILY" || task.completedToday) return task;
+
+  const character = await prisma.character.findUnique({ where: { userId } });
+  if (!character) return task;
+
+  const todayWeekday = weekdayInTimeZone(new Date(), character.timezone);
+  if (!task.repeatDays.includes(todayWeekday)) return task;
+
+  const newStreak = task.streak + 1;
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.task.update({
+      where: { id: task.id },
+      data: {
+        completedToday: true,
+        lastCompletedAt: new Date(),
+        streak: newStreak,
+        longestStreak: Math.max(task.longestStreak, newStreak),
+      },
+    });
+    await tx.character.update({
+      where: { userId },
+      data: {
+        totalXp: { increment: task.xpValue },
+        gold: { increment: task.goldValue },
+      },
+    });
+    await tx.goal.update({
+      where: { id: task.goalId },
+      data: { totalXp: { increment: task.xpValue } },
+    });
+    await tx.activityLog.create({
+      data: {
+        userId,
+        goalId: task.goalId,
+        taskId: task.id,
+        type: "DAILY_COMPLETED",
+        xpDelta: task.xpValue,
+        goldDelta: task.goldValue,
+        message: `Completed "${task.title}" (streak ${newStreak})`,
       },
     });
     return updated;

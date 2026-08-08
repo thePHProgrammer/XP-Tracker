@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import type { Task } from "@/app/generated/prisma/client";
 import { getLevelProgress } from "@/lib/domain/xp";
-import { completeTodoAction, incrementHabitAction } from "./tasks/actions";
+import {
+  completeDailyAction,
+  completeTodoAction,
+  incrementHabitAction,
+} from "./tasks/actions";
 
 type TaskLite = Pick<
   Task,
@@ -17,12 +21,16 @@ type TaskLite = Pick<
   | "habitAllowPositive"
   | "habitAllowNegative"
   | "completed"
+  | "completedToday"
+  | "streak"
+  | "repeatDays"
 >;
 
 type State = { totalXp: number; tasks: TaskLite[] };
 type OptimisticAction =
   | { kind: "habit"; taskId: string }
-  | { kind: "todo"; taskId: string };
+  | { kind: "todo"; taskId: string }
+  | { kind: "daily"; taskId: string };
 
 function reduce(prev: State, action: OptimisticAction): State {
   const task = prev.tasks.find((t) => t.id === action.taskId);
@@ -32,14 +40,29 @@ function reduce(prev: State, action: OptimisticAction): State {
     return { ...prev, totalXp: prev.totalXp + task.xpValue };
   }
 
-  if (task.completed) return prev;
+  if (action.kind === "todo") {
+    if (task.completed) return prev;
+    return {
+      totalXp: prev.totalXp + task.xpValue,
+      tasks: prev.tasks.map((t) =>
+        t.id === action.taskId ? { ...t, completed: true } : t
+      ),
+    };
+  }
+
+  // daily
+  if (task.completedToday) return prev;
   return {
     totalXp: prev.totalXp + task.xpValue,
     tasks: prev.tasks.map((t) =>
-      t.id === action.taskId ? { ...t, completed: true } : t
+      t.id === action.taskId
+        ? { ...t, completedToday: true, streak: t.streak + 1 }
+        : t
     ),
   };
 }
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function TaskBoard({
   goalId,
@@ -50,10 +73,7 @@ export function TaskBoard({
   totalXp: number;
   tasks: TaskLite[];
 }) {
-  const [state, applyOptimistic] = useOptimistic(
-    { totalXp, tasks },
-    reduce
-  );
+  const [state, applyOptimistic] = useOptimistic({ totalXp, tasks }, reduce);
   const [isPending, startTransition] = useTransition();
 
   const progress = getLevelProgress(state.totalXp);
@@ -63,11 +83,13 @@ export function TaskBoard({
   );
 
   const habits = state.tasks.filter((t) => t.type === "HABIT");
+  const dailies = state.tasks.filter((t) => t.type === "DAILY");
   const todos = state.tasks.filter((t) => t.type === "TODO");
 
   function handleHabit(taskId: string, direction: "positive" | "negative") {
     startTransition(async () => {
-      if (direction === "positive") applyOptimistic({ kind: "habit", taskId });
+      if (direction === "positive")
+        applyOptimistic({ kind: "habit", taskId });
       await incrementHabitAction(goalId, taskId, direction);
     });
   }
@@ -76,6 +98,13 @@ export function TaskBoard({
     startTransition(async () => {
       applyOptimistic({ kind: "todo", taskId });
       await completeTodoAction(goalId, taskId);
+    });
+  }
+
+  function handleCompleteDaily(taskId: string) {
+    startTransition(async () => {
+      applyOptimistic({ kind: "daily", taskId });
+      await completeDailyAction(goalId, taskId);
     });
   }
 
@@ -108,9 +137,52 @@ export function TaskBoard({
         </Link>
       </div>
 
-      {habits.length === 0 && todos.length === 0 ? (
+      {habits.length === 0 && dailies.length === 0 && todos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-neutral-800 p-6 text-center text-sm text-neutral-500">
-          No tasks yet. Add a habit or to-do to start earning XP.
+          No tasks yet. Add a habit, daily, or to-do to start earning XP.
+        </div>
+      ) : null}
+
+      {dailies.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium uppercase text-neutral-500">
+            Dailies
+          </h3>
+          {dailies.map((task) => (
+            <label
+              key={task.id}
+              className={`flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 p-3 ${
+                task.completedToday ? "opacity-50" : ""
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={task.completedToday}
+                disabled={task.completedToday || isPending}
+                onChange={() => handleCompleteDaily(task.id)}
+              />
+              <div className="flex-1">
+                <p
+                  className={`font-medium ${
+                    task.completedToday ? "line-through" : ""
+                  }`}
+                >
+                  {task.title}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  {task.difficulty} - {task.xpValue} XP / {task.goldValue}{" "}
+                  gold - streak {task.streak} -{" "}
+                  {task.repeatDays.length === 7
+                    ? "every day"
+                    : task.repeatDays
+                        .slice()
+                        .sort()
+                        .map((d) => WEEKDAY_LABELS[d])
+                        .join("/")}
+                </p>
+              </div>
+            </label>
+          ))}
         </div>
       ) : null}
 
