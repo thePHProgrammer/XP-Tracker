@@ -28,6 +28,12 @@ export default async function AppLayout({
           >
             Shop
           </Link>
+          <Link
+            href="/history"
+            className="text-sm text-neutral-400 transition hover:text-neutral-200"
+          >
+            History
+          </Link>
         </div>
         <div className="flex items-center gap-4 text-sm text-neutral-400">
           <span>{session.user.email}</span>

@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "ActivityType" ADD VALUE 'DAILY_UNCOMPLETED';

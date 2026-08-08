@@ -8,6 +8,7 @@ import {
   completeDailyAction,
   completeTodoAction,
   incrementHabitAction,
+  uncompleteTaskAction,
 } from "./tasks/actions";
 
 type TaskLite = Pick<
@@ -29,37 +30,60 @@ type TaskLite = Pick<
 type State = { totalXp: number; tasks: TaskLite[] };
 type OptimisticAction =
   | { kind: "habit"; taskId: string }
-  | { kind: "todo"; taskId: string }
-  | { kind: "daily"; taskId: string };
+  | { kind: "todo-complete" | "todo-uncomplete"; taskId: string }
+  | { kind: "daily-complete" | "daily-uncomplete"; taskId: string };
 
 function reduce(prev: State, action: OptimisticAction): State {
   const task = prev.tasks.find((t) => t.id === action.taskId);
   if (!task) return prev;
 
-  if (action.kind === "habit") {
-    return { ...prev, totalXp: prev.totalXp + task.xpValue };
-  }
+  switch (action.kind) {
+    case "habit":
+      return { ...prev, totalXp: prev.totalXp + task.xpValue };
 
-  if (action.kind === "todo") {
-    if (task.completed) return prev;
-    return {
-      totalXp: prev.totalXp + task.xpValue,
-      tasks: prev.tasks.map((t) =>
-        t.id === action.taskId ? { ...t, completed: true } : t
-      ),
-    };
-  }
+    case "todo-complete":
+      if (task.completed) return prev;
+      return {
+        totalXp: prev.totalXp + task.xpValue,
+        tasks: prev.tasks.map((t) =>
+          t.id === action.taskId ? { ...t, completed: true } : t
+        ),
+      };
 
-  // daily
-  if (task.completedToday) return prev;
-  return {
-    totalXp: prev.totalXp + task.xpValue,
-    tasks: prev.tasks.map((t) =>
-      t.id === action.taskId
-        ? { ...t, completedToday: true, streak: t.streak + 1 }
-        : t
-    ),
-  };
+    case "todo-uncomplete":
+      if (!task.completed) return prev;
+      return {
+        totalXp: prev.totalXp - task.xpValue,
+        tasks: prev.tasks.map((t) =>
+          t.id === action.taskId ? { ...t, completed: false } : t
+        ),
+      };
+
+    case "daily-complete":
+      if (task.completedToday) return prev;
+      return {
+        totalXp: prev.totalXp + task.xpValue,
+        tasks: prev.tasks.map((t) =>
+          t.id === action.taskId
+            ? { ...t, completedToday: true, streak: t.streak + 1 }
+            : t
+        ),
+      };
+
+    case "daily-uncomplete":
+      if (!task.completedToday) return prev;
+      return {
+        totalXp: prev.totalXp - task.xpValue,
+        tasks: prev.tasks.map((t) =>
+          t.id === action.taskId
+            ? { ...t, completedToday: false, streak: Math.max(0, t.streak - 1) }
+            : t
+        ),
+      };
+
+    default:
+      return prev;
+  }
 }
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -94,17 +118,27 @@ export function TaskBoard({
     });
   }
 
-  function handleCompleteTodo(taskId: string) {
+  function handleToggleTodo(taskId: string, currentlyCompleted: boolean) {
     startTransition(async () => {
-      applyOptimistic({ kind: "todo", taskId });
-      await completeTodoAction(goalId, taskId);
+      if (currentlyCompleted) {
+        applyOptimistic({ kind: "todo-uncomplete", taskId });
+        await uncompleteTaskAction(goalId, taskId);
+      } else {
+        applyOptimistic({ kind: "todo-complete", taskId });
+        await completeTodoAction(goalId, taskId);
+      }
     });
   }
 
-  function handleCompleteDaily(taskId: string) {
+  function handleToggleDaily(taskId: string, currentlyCompleted: boolean) {
     startTransition(async () => {
-      applyOptimistic({ kind: "daily", taskId });
-      await completeDailyAction(goalId, taskId);
+      if (currentlyCompleted) {
+        applyOptimistic({ kind: "daily-uncomplete", taskId });
+        await uncompleteTaskAction(goalId, taskId);
+      } else {
+        applyOptimistic({ kind: "daily-complete", taskId });
+        await completeDailyAction(goalId, taskId);
+      }
     });
   }
 
@@ -158,8 +192,10 @@ export function TaskBoard({
               <input
                 type="checkbox"
                 checked={task.completedToday}
-                disabled={task.completedToday || isPending}
-                onChange={() => handleCompleteDaily(task.id)}
+                disabled={isPending}
+                onChange={() =>
+                  handleToggleDaily(task.id, task.completedToday)
+                }
               />
               <div className="flex-1">
                 <p
@@ -245,8 +281,8 @@ export function TaskBoard({
               <input
                 type="checkbox"
                 checked={task.completed}
-                disabled={task.completed || isPending}
-                onChange={() => handleCompleteTodo(task.id)}
+                disabled={isPending}
+                onChange={() => handleToggleTodo(task.id, task.completed)}
               />
               <div>
                 <p

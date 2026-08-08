@@ -10,6 +10,7 @@ import {
   createTask,
   incrementHabit,
 } from "@/lib/domain/tasks";
+import { undoLatestForTask } from "@/lib/domain/undo";
 import { createTaskSchema } from "@/lib/validation/tasks";
 
 export type FormState = { error: string } | undefined;
@@ -57,6 +58,16 @@ export async function completeDailyAction(goalId: string, taskId: string) {
 
   const task = await completeDaily(session.user.id, taskId);
   if (!task) notFound();
+
+  revalidatePath(`/goals/${goalId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function uncompleteTaskAction(goalId: string, taskId: string) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  await undoLatestForTask(session.user.id, taskId);
 
   revalidatePath(`/goals/${goalId}`);
   revalidatePath("/dashboard");
