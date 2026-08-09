@@ -52,7 +52,12 @@ export default async function GoalDetailPage({
         </div>
       </div>
 
-      <TaskBoard goalId={goal.id} totalXp={goal.totalXp} tasks={tasks} />
+      <TaskBoard
+        goalId={goal.id}
+        goalTitle={goal.title}
+        totalXp={goal.totalXp}
+        tasks={tasks}
+      />
     </div>
   );
 }

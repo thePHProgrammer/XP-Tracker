@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import type { Task } from "@/app/generated/prisma/client";
 import { getLevelProgress } from "@/lib/domain/xp";
+import { LevelUpToast, useLevelUpToast } from "@/components/level-up-toast";
 import {
   completeDailyAction,
   completeTodoAction,
@@ -90,10 +91,12 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function TaskBoard({
   goalId,
+  goalTitle,
   totalXp,
   tasks,
 }: {
   goalId: string;
+  goalTitle: string;
   totalXp: number;
   tasks: TaskLite[];
 }) {
@@ -105,6 +108,7 @@ export function TaskBoard({
     100,
     Math.round((progress.xpIntoLevel / progress.xpForNextLevel) * 100)
   );
+  const showLevelUp = useLevelUpToast(progress.level);
 
   const habits = state.tasks.filter((t) => t.type === "HABIT");
   const dailies = state.tasks.filter((t) => t.type === "DAILY");
@@ -301,6 +305,12 @@ export function TaskBoard({
           ))}
         </div>
       ) : null}
+
+      <LevelUpToast
+        visible={showLevelUp}
+        level={progress.level}
+        label={goalTitle}
+      />
     </div>
   );
 }

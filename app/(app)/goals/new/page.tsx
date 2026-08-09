@@ -24,7 +24,7 @@ export default function NewGoalPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">New goal</h1>
       <form action={formAction} className="flex max-w-lg flex-col gap-4">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <div className="flex w-20 flex-col gap-1">
             <label htmlFor="icon" className="text-sm text-neutral-300">
               Icon
@@ -38,7 +38,7 @@ export default function NewGoalPage() {
               className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-center text-neutral-100 outline-none focus:border-indigo-500"
             />
           </div>
-          <div className="flex flex-1 flex-col gap-1">
+          <div className="flex min-w-40 flex-1 flex-col gap-1">
             <label htmlFor="title" className="text-sm text-neutral-300">
               Title
             </label>
