@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+:root {
+  --background: #060608;
+  --foreground: #f1f1f4;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100%;
+}
+
+/* Ambient glow orbs behind the whole app - fixed so they don't move with
+   scroll, low-opacity + heavily blurred so they read as soft light rather
+   than shapes. */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-bg::before,
+.ambient-bg::after {
+  content: "";
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  max-width: 800px;
+  max-height: 800px;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.22;
+}
+
+.ambient-bg::before {
+  top: -15%;
+  left: -10%;
+  background: radial-gradient(circle, #6366f1, transparent 70%);
+}
+
+.ambient-bg::after {
+  bottom: -20%;
+  right: -10%;
+  background: radial-gradient(circle, #a855f7, transparent 70%);
+}
+
+/* Glass card surface */
+.glass-panel {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+@keyframes level-up-pop {
+  0% {
+    transform: scale(0.8) translateY(16px);
+    opacity: 0;
+  }
+  18% {
+    transform: scale(1.08) translateY(0);
+    opacity: 1;
+  }
+  28% {
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.animate-level-up {
+  animation: level-up-pop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}

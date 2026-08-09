@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Auth.js (next-auth v5) required models ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // null for OAuth-only users
+
+  accounts  Account[]
+  sessions  Session[]
+  character Character?
+  goals     Goal[]
+  rewards   Reward[]
+
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Server-side, DB-backed brute-force guard for /login and /signup.
+// No third-party rate limiting service - just an indexed, self-pruning table.
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  identifier  String // normalized email or IP
+  attemptedAt DateTime @default(now())
+
+  @@index([identifier, attemptedAt])
+}
+
+// --- Game state ---
+
+model Character {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalXp Int @default(0) // global XP; overall level is derived from this, never stored
+  gold    Int @default(0)
+
+  hp    Int @default(50)
+  maxHp Int @default(50)
+
+  timezone         String   @default("UTC") // IANA name; used for daily-rollover boundary
+  lastRecomputedAt DateTime @default(now()) // idempotency marker for the daily rollover
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GoalStatus {
+  ACTIVE
+  ARCHIVED
+  COMPLETED
+}
+
+model Goal {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  icon        String? // emoji
+  totalXp     Int        @default(0) // this goal's own level is derived from this
+  status      GoalStatus @default(ACTIVE)
+  sortOrder   Int        @default(0)
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+enum TaskType {
+  HABIT
+  DAILY
+  TODO
+}
+
+enum Difficulty {
+  TRIVIAL
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Task {
+  id     String @id @default(cuid())
+  userId String // denormalized for cheap ownership checks
+  goalId String
+  goal   Goal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  type       TaskType
+  title      String
+  notes      String?
+  difficulty Difficulty @default(EASY)
+  xpValue    Int // snapshotted from DIFFICULTY_CONFIG at creation time
+  goldValue  Int
+  isActive   Boolean    @default(true) // soft-archive; preserves ActivityLog history
+  sortOrder  Int        @default(0)
+
+  // HABIT-only
+  habitAllowPositive Boolean @default(true)
+  habitAllowNegative Boolean @default(false)
+
+  // DAILY-only
+  streak          Int       @default(0)
+  longestStreak   Int       @default(0)
+  repeatDays      Int[]     @default([0, 1, 2, 3, 4, 5, 6]) // 0=Sun..6=Sat
+  completedToday  Boolean   @default(false)
+  lastCompletedAt DateTime?
+
+  // TODO-only
+  completed   Boolean         @default(false)
+  completedAt DateTime?
+  dueDate     DateTime?
+  checklist   ChecklistItem[]
+
+  activity ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([goalId, isActive])
+  @@index([userId, type])
+}
+
+model ChecklistItem {
+  id        String  @id @default(cuid())
+  taskId    String
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title     String
+  completed Boolean @default(false)
+  sortOrder Int     @default(0)
+}
+
+enum ActivityType {
+  HABIT_POSITIVE
+  HABIT_NEGATIVE
+  DAILY_COMPLETED
+  DAILY_UNCOMPLETED
+  DAILY_MISSED_PENALTY
+  TODO_COMPLETED
+  TODO_UNCOMPLETED
+  REWARD_PURCHASED
+}
+
+// Unified ledger - powers the History page, undo, and audit
+model ActivityLog {
+  id     String  @id @default(cuid())
+  userId String
+  goalId String?
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  rewardId String?
+  type     ActivityType
+  xpDelta  Int          @default(0)
+  goldDelta Int         @default(0)
+  hpDelta  Int          @default(0)
+  message  String
+
+  reversedAt DateTime? // set when undone; row is kept, never deleted
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Reward {
+  id          String  @id @default(cuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  goldCost    Int
+  icon        String?
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  purchases RewardPurchase[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isActive])
+}
+
+model RewardPurchase {
+  id          String   @id @default(cuid())
+  userId      String
+  rewardId    String
+  reward      Reward   @relation(fields: [rewardId], references: [id])
+  goldSpent   Int // snapshot cost, so later price edits don't rewrite history
+  purchasedAt DateTime @default(now())
+
+  @@index([userId, purchasedAt])
+}
