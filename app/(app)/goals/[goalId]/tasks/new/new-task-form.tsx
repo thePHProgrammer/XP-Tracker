@@ -2,23 +2,18 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { inputClass } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { createTaskAction, type FormState } from "../actions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
-    >
+    <Button type="submit" disabled={pending}>
       {pending ? "Adding..." : "Add task"}
-    </button>
+    </Button>
   );
 }
-
-const inputClass =
-  "rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-neutral-100 outline-none focus:border-indigo-500";
 
 const WEEKDAYS = [
   { value: 0, label: "Sun" },
@@ -52,7 +47,7 @@ export function NewTaskForm({ goalId }: { goalId: string }) {
           ).map(([value, label]) => (
             <label
               key={value}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-neutral-700 px-3 py-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-neutral-900"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition has-[:checked]:border-indigo-400/50 has-[:checked]:bg-indigo-500/15 has-[:checked]:text-indigo-200"
             >
               <input
                 type="radio"
@@ -60,6 +55,7 @@ export function NewTaskForm({ goalId }: { goalId: string }) {
                 value={value}
                 checked={type === value}
                 onChange={() => setType(value)}
+                className="accent-indigo-500"
               />
               {label}
             </label>
@@ -108,7 +104,11 @@ export function NewTaskForm({ goalId }: { goalId: string }) {
 
       {type === "HABIT" ? (
         <label className="flex items-center gap-2 text-sm text-neutral-300">
-          <input type="checkbox" name="habitAllowNegative" />
+          <input
+            type="checkbox"
+            name="habitAllowNegative"
+            className="accent-indigo-500"
+          />
           Also allow a negative click (costs HP)
         </label>
       ) : null}
@@ -122,13 +122,14 @@ export function NewTaskForm({ goalId }: { goalId: string }) {
             {WEEKDAYS.map((day) => (
               <label
                 key={day.value}
-                className="flex flex-1 flex-col items-center gap-1 rounded-md border border-neutral-700 px-1 py-2 text-xs has-[:checked]:border-indigo-500 has-[:checked]:bg-neutral-900"
+                className="flex flex-1 flex-col items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-1 py-2 text-xs transition has-[:checked]:border-indigo-400/50 has-[:checked]:bg-indigo-500/15 has-[:checked]:text-indigo-200"
               >
                 <input
                   type="checkbox"
                   name="repeatDays"
                   value={day.value}
                   defaultChecked
+                  className="accent-indigo-500"
                 />
                 {day.label}
               </label>

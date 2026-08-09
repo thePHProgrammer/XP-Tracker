@@ -1,7 +1,10 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
+import { Check, Coins } from "lucide-react";
 import type { Reward } from "@/app/generated/prisma/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { archiveRewardAction, purchaseRewardAction } from "./actions";
 
 type RewardLite = Pick<
@@ -46,67 +49,74 @@ export function RewardList({
 
   if (rewards.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-neutral-800 p-6 text-center text-sm text-neutral-500">
+      <Card className="border-dashed p-6 text-center text-sm text-neutral-500">
         No rewards yet. Add one below - e.g. &quot;Level 5 Trading: buy the
         course, 500 gold&quot;.
-      </div>
+      </Card>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-neutral-400">
-        Balance:{" "}
-        <span className="font-medium text-neutral-100">
+      <Card className="flex items-center gap-2 px-4 py-3">
+        <Coins className="h-4 w-4 text-amber-400" />
+        <span className="text-sm text-neutral-400">Balance:</span>
+        <span className="font-semibold text-amber-300">
           {optimisticGold} gold
         </span>
-      </p>
+      </Card>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       <ul className="flex flex-col gap-2">
         {rewards.map((reward) => {
           const canAfford = optimisticGold >= reward.goldCost;
           return (
-            <li
-              key={reward.id}
-              className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3"
-            >
-              <div>
-                <p className="flex items-center gap-2 font-medium">
-                  {reward.icon ? <span>{reward.icon}</span> : null}
-                  {reward.title}
-                  {purchasedId === reward.id ? (
-                    <span className="text-xs text-green-400">
-                      Purchased!
-                    </span>
-                  ) : null}
-                </p>
-                {reward.description ? (
-                  <p className="text-xs text-neutral-500">
-                    {reward.description}
+            <li key={reward.id}>
+              <Card className="flex flex-wrap items-center justify-between gap-3 p-3.5">
+                <div>
+                  <p className="flex items-center gap-2 font-medium">
+                    {reward.icon ? (
+                      <span className="text-lg">{reward.icon}</span>
+                    ) : null}
+                    {reward.title}
+                    {purchasedId === reward.id ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300">
+                        <Check className="h-3 w-3" />
+                        Purchased!
+                      </span>
+                    ) : null}
                   </p>
-                ) : null}
-                <p className="text-xs text-neutral-500">
-                  {reward.goldCost} gold
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handlePurchase(reward)}
-                  disabled={isPending || !canAfford}
-                  className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
-                >
-                  {canAfford ? "Redeem" : "Not enough gold"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleArchive(reward.id)}
-                  disabled={isPending}
-                  className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-400 transition hover:bg-neutral-800 hover:text-red-400 disabled:opacity-50"
-                >
-                  Remove
-                </button>
-              </div>
+                  {reward.description ? (
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {reward.description}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-300">
+                    <Coins className="h-3 w-3" />
+                    {reward.goldCost} gold
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => handlePurchase(reward)}
+                    disabled={isPending || !canAfford}
+                    variant={canAfford ? "primary" : "secondary"}
+                    size="sm"
+                  >
+                    {canAfford ? "Redeem" : "Not enough gold"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleArchive(reward.id)}
+                    disabled={isPending}
+                    variant="secondary"
+                    size="sm"
+                    className="hover:text-red-400"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </Card>
             </li>
           );
         })}

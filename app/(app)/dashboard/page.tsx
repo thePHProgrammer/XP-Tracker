@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Coins, Heart, Star } from "lucide-react";
 import { auth } from "@/auth";
 import { getOrCreateCharacter } from "@/lib/domain/character";
 import { listGoals } from "@/lib/domain/goals";
 import { getLevelProgress } from "@/lib/domain/xp";
+import { Card } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/button";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -17,9 +21,8 @@ export default async function DashboardPage() {
   ]);
 
   const overall = getLevelProgress(character.totalXp);
-  const overallPercent = Math.min(
-    100,
-    Math.round((overall.xpIntoLevel / overall.xpForNextLevel) * 100)
+  const overallPercent = Math.round(
+    (overall.xpIntoLevel / overall.xpForNextLevel) * 100
   );
 
   return (
@@ -30,94 +33,85 @@ export default async function DashboardPage() {
         </h1>
       </div>
 
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-medium text-neutral-200">
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-2 font-medium text-neutral-100">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/30 to-violet-500/30 text-indigo-300">
+              <Star className="h-4 w-4" />
+            </span>
             Character Level {overall.level}
           </span>
-          <span className="text-neutral-500">
+          <span className="text-sm text-neutral-400">
             {overall.xpIntoLevel} / {overall.xpForNextLevel} XP
           </span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-          <div
-            className="h-full rounded-full bg-indigo-500 transition-all"
-            style={{ width: `${overallPercent}%` }}
-          />
-        </div>
-      </div>
+        <ProgressBar percent={overallPercent} tone="xp" />
+      </Card>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-          <p className="text-xs uppercase text-neutral-500">Gold</p>
-          <p className="text-2xl font-semibold">{character.gold}</p>
-        </div>
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-          <div className="mb-1 flex items-baseline justify-between">
-            <p className="text-xs uppercase text-neutral-500">HP</p>
+        <Card className="p-4">
+          <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-neutral-500">
+            <Coins className="h-3.5 w-3.5 text-amber-400" />
+            Gold
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-amber-300">
+            {character.gold}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-neutral-500">
+              <Heart className="h-3.5 w-3.5 text-rose-400" />
+              HP
+            </p>
             <p className="text-sm text-neutral-400">
               {character.hp} / {character.maxHp}
             </p>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-            <div
-              className="h-full rounded-full bg-red-500 transition-all"
-              style={{
-                width: `${Math.round(
-                  (character.hp / character.maxHp) * 100
-                )}%`,
-              }}
-            />
-          </div>
-        </div>
+          <ProgressBar
+            percent={(character.hp / character.maxHp) * 100}
+            tone="hp"
+          />
+        </Card>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Goals</h2>
-          <Link
-            href="/goals/new"
-            className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500"
-          >
+          <LinkButton href="/goals/new" size="sm">
             + New goal
-          </Link>
+          </LinkButton>
         </div>
 
         {goals.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-neutral-800 p-6 text-center text-sm text-neutral-500">
+          <Card className="border-dashed p-6 text-center text-sm text-neutral-500">
             No goals yet. Create one to start earning XP.
-          </div>
+          </Card>
         ) : (
           <ul className="flex flex-col gap-3">
             {goals.map((goal) => {
               const progress = getLevelProgress(goal.totalXp);
-              const percent = Math.min(
-                100,
-                Math.round(
-                  (progress.xpIntoLevel / progress.xpForNextLevel) * 100
-                )
+              const percent = Math.round(
+                (progress.xpIntoLevel / progress.xpForNextLevel) * 100
               );
               return (
                 <li key={goal.id}>
                   <Link
                     href={`/goals/${goal.id}`}
-                    className="block rounded-lg border border-neutral-800 bg-neutral-900 p-4 transition hover:border-neutral-700"
+                    className="glass-panel block rounded-xl p-4 transition hover:border-white/20 hover:bg-white/[0.07]"
                   >
-                    <div className="mb-2 flex items-center justify-between">
+                    <div className="mb-2.5 flex items-center justify-between">
                       <span className="flex items-center gap-2 font-medium">
-                        {goal.icon ? <span>{goal.icon}</span> : null}
+                        {goal.icon ? (
+                          <span className="text-lg">{goal.icon}</span>
+                        ) : null}
                         {goal.title}
                       </span>
-                      <span className="text-sm text-neutral-500">
+                      <span className="text-sm text-neutral-400">
                         Level {progress.level}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
-                      <div
-                        className="h-full rounded-full bg-indigo-500"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
+                    <ProgressBar percent={percent} tone="xp" className="h-1.5" />
                   </Link>
                 </li>
               );

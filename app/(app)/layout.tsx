@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { History, LogOut, Settings, ShoppingBag, Sparkles } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { recomputeDailyRollover } from "@/lib/domain/recompute";
 
@@ -16,30 +17,37 @@ export default async function AppLayout({
   await recomputeDailyRollover(session.user.id);
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
-      <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-neutral-800 px-4 py-4 sm:px-6">
+    <div className="flex min-h-screen flex-col text-neutral-100">
+      <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-white/10 bg-black/40 px-4 py-3.5 backdrop-blur-xl sm:px-6">
         <div className="flex items-center gap-4 sm:gap-6">
-          <Link href="/dashboard" className="font-bold">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-bold"
+          >
+            <Sparkles className="h-5 w-5 text-indigo-400" />
             XP Tracker
           </Link>
           <nav className="flex items-center gap-4 text-sm text-neutral-400">
             <Link
               href="/shop"
-              className="transition hover:text-neutral-200"
+              className="flex items-center gap-1.5 transition hover:text-neutral-200"
             >
-              Shop
+              <ShoppingBag className="h-4 w-4" />
+              <span className="hidden sm:inline">Shop</span>
             </Link>
             <Link
               href="/history"
-              className="transition hover:text-neutral-200"
+              className="flex items-center gap-1.5 transition hover:text-neutral-200"
             >
-              History
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">History</span>
             </Link>
             <Link
               href="/settings"
-              className="transition hover:text-neutral-200"
+              className="flex items-center gap-1.5 transition hover:text-neutral-200"
             >
-              Settings
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
             </Link>
           </nav>
         </div>
@@ -55,9 +63,10 @@ export default async function AppLayout({
           >
             <button
               type="submit"
-              className="text-neutral-400 transition hover:text-neutral-200"
+              className="flex items-center gap-1.5 text-neutral-400 transition hover:text-neutral-200"
             >
-              Log out
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Log out</span>
             </button>
           </form>
         </div>

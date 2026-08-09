@@ -1,10 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
+import { Coins, Flame, Minus, Plus, Zap } from "lucide-react";
 import type { Task } from "@/app/generated/prisma/client";
 import { getLevelProgress } from "@/lib/domain/xp";
 import { LevelUpToast, useLevelUpToast } from "@/components/level-up-toast";
+import { Card } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/button";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { DifficultyBadge } from "@/components/ui/difficulty-badge";
 import {
   completeDailyAction,
   completeTodoAction,
@@ -89,6 +93,22 @@ function reduce(prev: State, action: OptimisticAction): State {
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+function TaskMeta({ task }: { task: TaskLite }) {
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      <DifficultyBadge difficulty={task.difficulty} />
+      <span className="inline-flex items-center gap-1 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-2 py-0.5 text-[11px] font-medium text-indigo-300">
+        <Zap className="h-3 w-3" />
+        {task.xpValue}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+        <Coins className="h-3 w-3" />
+        {task.goldValue}
+      </span>
+    </div>
+  );
+}
+
 export function TaskBoard({
   goalId,
   goalTitle,
@@ -104,9 +124,8 @@ export function TaskBoard({
   const [isPending, startTransition] = useTransition();
 
   const progress = getLevelProgress(state.totalXp);
-  const percent = Math.min(
-    100,
-    Math.round((progress.xpIntoLevel / progress.xpForNextLevel) * 100)
+  const percent = Math.round(
+    (progress.xpIntoLevel / progress.xpForNextLevel) * 100
   );
   const showLevelUp = useLevelUpToast(progress.level);
 
@@ -148,48 +167,40 @@ export function TaskBoard({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-medium text-neutral-200">
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="font-medium text-neutral-100">
             Level {progress.level}
           </span>
-          <span className="text-neutral-500">
+          <span className="text-sm text-neutral-400">
             {progress.xpIntoLevel} / {progress.xpForNextLevel} XP
           </span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-          <div
-            className="h-full rounded-full bg-indigo-500 transition-all"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-      </div>
+        <ProgressBar percent={percent} tone="xp" />
+      </Card>
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Tasks</h2>
-        <Link
-          href={`/goals/${goalId}/tasks/new`}
-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500"
-        >
+        <LinkButton href={`/goals/${goalId}/tasks/new`} size="sm">
           + New task
-        </Link>
+        </LinkButton>
       </div>
 
       {habits.length === 0 && dailies.length === 0 && todos.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 p-6 text-center text-sm text-neutral-500">
+        <Card className="border-dashed p-6 text-center text-sm text-neutral-500">
           No tasks yet. Add a habit, daily, or to-do to start earning XP.
-        </div>
+        </Card>
       ) : null}
 
       {dailies.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium uppercase text-neutral-500">
+          <h3 className="text-sm font-medium uppercase tracking-wide text-neutral-500">
             Dailies
           </h3>
           {dailies.map((task) => (
-            <label
+            <Card
               key={task.id}
-              className={`flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 p-3 ${
+              className={`flex items-center gap-3 p-3.5 transition ${
                 task.completedToday ? "opacity-50" : ""
               }`}
             >
@@ -200,6 +211,7 @@ export function TaskBoard({
                 onChange={() =>
                   handleToggleDaily(task.id, task.completedToday)
                 }
+                className="h-5 w-5 accent-indigo-500"
               />
               <div className="flex-1">
                 <p
@@ -209,39 +221,49 @@ export function TaskBoard({
                 >
                   {task.title}
                 </p>
-                <p className="text-xs text-neutral-500">
-                  {task.difficulty} - {task.xpValue} XP / {task.goldValue}{" "}
-                  gold - streak {task.streak} -{" "}
-                  {task.repeatDays.length === 7
-                    ? "every day"
-                    : task.repeatDays
-                        .slice()
-                        .sort()
-                        .map((d) => WEEKDAY_LABELS[d])
-                        .join("/")}
-                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <DifficultyBadge difficulty={task.difficulty} />
+                  <span className="inline-flex items-center gap-1 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-2 py-0.5 text-[11px] font-medium text-indigo-300">
+                    <Zap className="h-3 w-3" />
+                    {task.xpValue}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+                    <Coins className="h-3 w-3" />
+                    {task.goldValue}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-orange-400/20 bg-orange-400/10 px-2 py-0.5 text-[11px] font-medium text-orange-300">
+                    <Flame className="h-3 w-3" />
+                    {task.streak}
+                  </span>
+                  <span className="text-[11px] text-neutral-500">
+                    {task.repeatDays.length === 7
+                      ? "every day"
+                      : task.repeatDays
+                          .slice()
+                          .sort()
+                          .map((d) => WEEKDAY_LABELS[d])
+                          .join("/")}
+                  </span>
+                </div>
               </div>
-            </label>
+            </Card>
           ))}
         </div>
       ) : null}
 
       {habits.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium uppercase text-neutral-500">
+          <h3 className="text-sm font-medium uppercase tracking-wide text-neutral-500">
             Habits
           </h3>
           {habits.map((task) => (
-            <div
+            <Card
               key={task.id}
-              className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3"
+              className="flex items-center justify-between p-3.5"
             >
               <div>
                 <p className="font-medium">{task.title}</p>
-                <p className="text-xs text-neutral-500">
-                  {task.difficulty} - {task.xpValue} XP / {task.goldValue}{" "}
-                  gold
-                </p>
+                <TaskMeta task={task} />
               </div>
               <div className="flex gap-2">
                 {task.habitAllowNegative ? (
@@ -249,9 +271,9 @@ export function TaskBoard({
                     type="button"
                     onClick={() => handleHabit(task.id, "negative")}
                     disabled={isPending}
-                    className="rounded-md border border-neutral-700 px-3 py-1 text-red-400 transition hover:bg-neutral-800 disabled:opacity-50"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-300 transition hover:bg-rose-500/20 active:scale-90 disabled:opacity-50"
                   >
-                    -
+                    <Minus className="h-4 w-4" />
                   </button>
                 ) : null}
                 {task.habitAllowPositive ? (
@@ -259,26 +281,26 @@ export function TaskBoard({
                     type="button"
                     onClick={() => handleHabit(task.id, "positive")}
                     disabled={isPending}
-                    className="rounded-md border border-neutral-700 px-3 py-1 text-green-400 transition hover:bg-neutral-800 disabled:opacity-50"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 transition hover:bg-emerald-500/20 active:scale-90 disabled:opacity-50"
                   >
-                    +
+                    <Plus className="h-4 w-4" />
                   </button>
                 ) : null}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : null}
 
       {todos.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium uppercase text-neutral-500">
+          <h3 className="text-sm font-medium uppercase tracking-wide text-neutral-500">
             To-dos
           </h3>
           {todos.map((task) => (
-            <label
+            <Card
               key={task.id}
-              className={`flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 p-3 ${
+              className={`flex items-center gap-3 p-3.5 transition ${
                 task.completed ? "opacity-50" : ""
               }`}
             >
@@ -287,6 +309,7 @@ export function TaskBoard({
                 checked={task.completed}
                 disabled={isPending}
                 onChange={() => handleToggleTodo(task.id, task.completed)}
+                className="h-5 w-5 accent-indigo-500"
               />
               <div>
                 <p
@@ -296,12 +319,9 @@ export function TaskBoard({
                 >
                   {task.title}
                 </p>
-                <p className="text-xs text-neutral-500">
-                  {task.difficulty} - {task.xpValue} XP / {task.goldValue}{" "}
-                  gold
-                </p>
+                <TaskMeta task={task} />
               </div>
-            </label>
+            </Card>
           ))}
         </div>
       ) : null}

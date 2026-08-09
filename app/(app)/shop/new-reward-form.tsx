@@ -2,23 +2,18 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { inputClass } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { createRewardAction, type FormState } from "./actions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
-    >
+    <Button type="submit" disabled={pending}>
       {pending ? "Adding..." : "Add reward"}
-    </button>
+    </Button>
   );
 }
-
-const inputClass =
-  "rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-neutral-100 outline-none focus:border-indigo-500";
 
 export function NewRewardForm() {
   const [state, formAction] = useActionState<FormState, FormData>(

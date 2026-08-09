@@ -1,17 +1,23 @@
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-neutral-100">
+        <Link
+          href="/"
+          className="mb-6 flex items-center justify-center gap-2 text-2xl font-bold text-neutral-100"
+        >
+          <Sparkles className="h-6 w-6 text-indigo-400" />
           XP Tracker
-        </h1>
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-6 shadow-xl">
-          {children}
-        </div>
+        </Link>
+        <Card className="p-6">{children}</Card>
       </div>
     </div>
   );

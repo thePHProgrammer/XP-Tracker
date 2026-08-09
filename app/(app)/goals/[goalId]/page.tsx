@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getOwnedGoal } from "@/lib/domain/goals";
 import { listActiveTasks } from "@/lib/domain/tasks";
+import { LinkButton, Button } from "@/components/ui/button";
 import { archiveGoalAction } from "./actions";
 import { TaskBoard } from "./task-board";
 
@@ -22,10 +22,10 @@ export default async function GoalDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold">
-            {goal.icon ? <span>{goal.icon}</span> : null}
+            {goal.icon ? <span className="text-2xl">{goal.icon}</span> : null}
             {goal.title}
           </h1>
           {goal.description ? (
@@ -35,19 +35,18 @@ export default async function GoalDetailPage({
           ) : null}
         </div>
         <div className="flex gap-2">
-          <Link
-            href={`/goals/${goal.id}/edit`}
-            className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-200 transition hover:bg-neutral-900"
-          >
+          <LinkButton href={`/goals/${goal.id}/edit`} variant="secondary" size="sm">
             Edit
-          </Link>
+          </LinkButton>
           <form action={archiveGoalAction.bind(null, goal.id)}>
-            <button
+            <Button
               type="submit"
-              className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-400 transition hover:bg-neutral-900 hover:text-red-400"
+              variant="secondary"
+              size="sm"
+              className="hover:text-red-400"
             >
               Archive
-            </button>
+            </Button>
           </form>
         </div>
       </div>

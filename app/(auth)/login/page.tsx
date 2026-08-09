@@ -3,18 +3,16 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { inputClass } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { loginAction } from "./actions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
-    >
+    <Button type="submit" disabled={pending} className="w-full">
       {pending ? "Logging in..." : "Log in"}
-    </button>
+    </Button>
   );
 }
 
@@ -33,7 +31,7 @@ export default function LoginPage() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-md border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-100 outline-none focus:border-indigo-500"
+          className={inputClass}
         />
       </div>
       <div className="flex flex-col gap-1">
@@ -46,7 +44,7 @@ export default function LoginPage() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-md border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-100 outline-none focus:border-indigo-500"
+          className={inputClass}
         />
       </div>
       {state?.error ? (

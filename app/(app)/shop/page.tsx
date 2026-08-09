@@ -26,7 +26,7 @@ export default async function ShopPage() {
 
       <RewardList gold={character.gold} rewards={rewards} />
 
-      <div className="flex flex-col gap-3 border-t border-neutral-800 pt-6">
+      <div className="flex flex-col gap-3 border-t border-white/10 pt-6">
         <h2 className="text-lg font-semibold">New reward</h2>
         <NewRewardForm />
       </div>
